@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MindMate – Mental Health Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<div class="dashboard">
+
+  <!-- ── Header ───────────────────────────────────────────── -->
+  <header>
+    <div class="logo">
+      <div class="logo-icon">🧠</div>
+      <h1>MindMate</h1>
+    </div>
+    <div class="header-greeting">
+      <p>Good morning, let's check in ☀️</p>
+      <span class="date" id="today-date"></span>
+    </div>
+    <div class="header-actions">
+      <div class="avatar">😊</div>
+    </div>
+  </header>
+
+  <!-- ── Stats Row ─────────────────────────────────────────── -->
+  <div class="stats-row">
+    <div class="stat-pill purple-pill">
+      <div class="value" id="stat-checks">0</div>
+      <div class="label">Check-ins</div>
+    </div>
+    <div class="stat-pill green-pill">
+      <div class="value" id="stat-low">0</div>
+      <div class="label">Low Stress Days</div>
+    </div>
+    <div class="stat-pill yellow-pill">
+      <div class="value" id="stat-streak">0</div>
+      <div class="label">Day Streak 🔥</div>
+    </div>
+  </div>
+
+  <!-- ── Main Grid ─────────────────────────────────────────── -->
+  <div class="grid">
+
+    <!-- ── Input Form Card ──────────────────────────────────── -->
+    <div class="card grid-left">
+      <div class="card-title">🔍 Daily Check-in</div>
+      <div class="card-subtitle">Fill in your daily stats to get your mental health prediction</div>
+
+      <div class="form-grid">
+        <!-- Age -->
+        <div class="form-group">
+          <label><span class="emoji">🎂</span> Age</label>
+          <input type="number" id="age" min="1" max="100" placeholder="e.g. 22" />
+        </div>
+
+        <!-- Sleep -->
+        <div class="form-group">
+          <label><span class="emoji">😴</span> Sleep (hrs/night)</label>
+          <input type="number" id="sleep" min="0" max="24" step="0.5" placeholder="e.g. 7" />
+        </div>
+
+        <!-- Work Hours -->
+        <div class="form-group">
+          <label><span class="emoji">💼</span> Work Hours/day</label>
+          <input type="number" id="work_hours" min="0" max="24" placeholder="e.g. 8" />
+        </div>
+
+        <!-- Physical Activity -->
+        <div class="form-group">
+          <label><span class="emoji">🏃</span> Activity (hrs/week)</label>
+          <input type="number" id="activity" min="0" max="40" step="0.5" placeholder="e.g. 3" />
+        </div>
+
+        <!-- Social Interaction – range -->
+        <div class="form-group">
+          <label><span class="emoji">🤝</span> Social Interaction (1–10)</label>
+          <div class="range-wrapper">
+            <input type="range" id="social" min="1" max="10" value="5"
+                   oninput="updateRange('social','social-val')" />
+            <span class="range-value" id="social-val">5</span>
+          </div>
+        </div>
+
+        <!-- Self-Reported Stress – range -->
+        <div class="form-group">
+          <label><span class="emoji">😰</span> Stress Level (1–10)</label>
+          <div class="range-wrapper">
+            <input type="range" id="stress_self" min="1" max="10" value="5"
+                   oninput="updateRange('stress_self','stress-val')" />
+            <span class="range-value" id="stress-val">5</span>
+          </div>
+        </div>
+      </div><!-- /form-grid -->
+
+      <!-- Error box -->
+      <div class="error-box" id="error-box">
+        <span>⚠️</span>
+        <span id="error-msg">Something went wrong. Please try again.</span>
+      </div>
+
+      <!-- Predict Button -->
+      <button class="btn-predict" id="predict-btn" onclick="predict()">
+        🔮 Predict Mental Health Score
+      </button>
+    </div><!-- /form card -->
+
+    <!-- ── Result Card ─────────────────────────────────────── -->
+    <div class="card grid-right" id="result-card">
+      <div class="result-label">Your Prediction</div>
+
+      <div class="result-badge" id="result-badge"></div>
+
+      <div class="result-title" id="result-title"></div>
+      <div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:10px;" id="result-sub"></div>
+
+      <!-- Confidence bar -->
+      <div class="confidence-row">
+        <span class="conf-label">Confidence</span>
+        <div class="conf-bar"><div class="conf-fill" id="conf-fill"></div></div>
+        <span class="conf-pct" id="conf-pct">0%</span>
+      </div>
+
+      <!-- Explanation -->
+      <div class="explanation-text" id="explanation-text"></div>
+
+      <!-- Tips -->
+      <div class="tips-title">💡 Personalised Tips</div>
+      <ul class="tips-list" id="tips-list"></ul>
+    </div><!-- /result card -->
+
+    <!-- ── Mood Tracker Card ───────────────────────────────── -->
+    <div class="card grid-left">
+      <div class="card-title">🌈 Today's Mood</div>
+      <div class="card-subtitle">How are you feeling right now?</div>
+      <div class="mood-row">
+        <button class="mood-btn" onclick="selectMood(this,'😡','Angry')">😡</button>
+        <button class="mood-btn" onclick="selectMood(this,'😟','Anxious')">😟</button>
+        <button class="mood-btn" onclick="selectMood(this,'😐','Neutral')">😐</button>
+        <button class="mood-btn" onclick="selectMood(this,'🙂','Good')">🙂</button>
+        <button class="mood-btn" onclick="selectMood(this,'😄','Happy')">😄</button>
+        <button class="mood-btn" onclick="selectMood(this,'🤩','Excellent')">🤩</button>
+      </div>
+      <div class="mood-label" id="mood-label">Tap a mood to record it</div>
+    </div>
+
+    <!-- ── Wellness Tip Card ───────────────────────────────── -->
+    <div class="card grid-right">
+      <div class="card-title">💚 Wellness Tip of the Day</div>
+      <div class="card-subtitle">A small habit, a big difference</div>
+      <div class="wellness-tip" id="wellness-tip"></div>
+    </div>
+
+  </div><!-- /grid -->
+
+  </div><!-- /dashboard -->
+
+<!-- ── JavaScript ──────────────────────────────────────────── -->
+<script>
+// ── Utility: update range display value ──────────────────────
+function updateRange(inputId, spanId) {
+  const val = document.getElementById(inputId).value;
+  const span = document.getElementById(spanId);
+  span.textContent = val;
+  // Update slider gradient fill
+  const input = document.getElementById(inputId);
+  const pct = ((val - 1) / 9) * 100;
+  input.style.background = `linear-gradient(to right, var(--accent) 0%, var(--accent) ${pct}%, rgba(180,160,140,0.2) ${pct}%)`;
+}
+// init sliders on load
+updateRange('social', 'social-val');
+updateRange('stress_self', 'stress-val');
+
+// ── Set today's date ──────────────────────────────────────────
+document.getElementById('today-date').textContent =
+  new Date().toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+
+// ── Session stats (in-memory) ─────────────────────────────────
+let sessionChecks = 0, sessionLow = 0, sessionStreak = 0;
+
+// ── Wellness tips pool ────────────────────────────────────────
+const TIPS_POOL = [
+  "<strong>Breathe deeply.</strong> Try the 4-7-8 method: inhale for 4 seconds, hold for 7, exhale for 8. Repeat 3 times.",
+  "<strong>Digital detox.</strong> Put your phone face-down for the next 30 minutes and enjoy the quiet.",
+  "<strong>Hydrate first.</strong> Drink a full glass of water right now — dehydration increases anxiety by up to 25%.",
+  "<strong>Move your body.</strong> Even a 10-minute walk outside can lift your mood significantly.",
+  "<strong>Gratitude journal.</strong> Write down 3 things you're thankful for today, however small.",
+  "<strong>Sleep hygiene.</strong> Dim your screens an hour before bed for deeper, more restorative sleep.",
+  "<strong>Connect.</strong> Reach out to one friend or family member today — social bonds are powerful stress buffers.",
+  "<strong>Mindful eating.</strong> Eat your next meal without screens. Savour every bite.",
+];
+document.getElementById('wellness-tip').innerHTML =
+  TIPS_POOL[Math.floor(Math.random() * TIPS_POOL.length)];
+
+// ── Mood selector ─────────────────────────────────────────────
+function selectMood(btn, emoji, label) {
+  document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('mood-label').textContent = `You're feeling: ${emoji} ${label}`;
+}
+
+// ── Validate inputs ───────────────────────────────────────────
+function getInputs() {
+  const age        = parseFloat(document.getElementById('age').value);
+  const sleep      = parseFloat(document.getElementById('sleep').value);
+  const work_hours = parseFloat(document.getElementById('work_hours').value);
+  const activity   = parseFloat(document.getElementById('activity').value);
+  const social     = parseFloat(document.getElementById('social').value);
+  const stress_self= parseFloat(document.getElementById('stress_self').value);
+
+  if (isNaN(age) || isNaN(sleep) || isNaN(work_hours) || isNaN(activity))
+    return { error: "Please fill in all numeric fields (Age, Sleep, Work Hours, Activity)." };
+  if (age < 1 || age > 119)
+    return { error: "Age must be between 1 and 119." };
+  if (sleep < 0 || sleep > 24)
+    return { error: "Sleep hours must be between 0 and 24." };
+  if (work_hours < 0 || work_hours > 24)
+    return { error: "Work hours must be between 0 and 24." };
+  if (activity < 0 || activity > 168)
+    return { error: "Activity hours must be between 0 and 168 per week." };
+
+  return { age, sleep, work_hours, activity, social, stress_self };
+}
+
+// ── Show / hide error ─────────────────────────────────────────
+function showError(msg) {
+  const box = document.getElementById('error-box');
+  document.getElementById('error-msg').textContent = msg;
+  box.classList.add('visible');
+  setTimeout(() => box.classList.remove('visible'), 5000);
+}
+function hideError() {
+  document.getElementById('error-box').classList.remove('visible');
+}
+
+// ── Main predict function ─────────────────────────────────────
+async function predict() {
+  hideError();
+  const inputs = getInputs();
+  if (inputs.error) { showError(inputs.error); return; }
+
+  const btn = document.getElementById('predict-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Analysing…';
+
+  try {
+    const res = await fetch('http://localhost:3000/predict', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(inputs),
+    });
+    const data = await res.json();
+
+    if (!res.ok || data.error) {
+      showError(data.error || 'Server returned an error.');
+      return;
+    }
+
+    displayResult(data);
+  } catch (err) {
+    showError('Could not connect to server. Make sure NodeJS is running on port 3000.');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '🔮 Predict Mental Health Score';
+  }
+}
+
+// ── Display the result ────────────────────────────────────────
+function displayResult(data) {
+  const { prediction, confidence, explanation, tips } = data;
+  const cls = prediction.toLowerCase(); // "low" | "medium" | "high"
+
+  // Badge & title
+  const emojiMap = { low: '🟢', medium: '🟡', high: '🔴' };
+  const badge = document.getElementById('result-badge');
+  badge.className = `result-badge ${cls}`;
+  badge.textContent = `${emojiMap[cls]} ${prediction} Stress`;
+
+  const title = document.getElementById('result-title');
+  title.className = `result-title ${cls}`;
+  title.textContent = `${prediction} Stress Level`;
+
+  document.getElementById('result-sub').textContent =
+    `Based on your inputs · Model confidence: ${confidence}%`;
+
+  // Confidence bar
+  const fill = document.getElementById('conf-fill');
+  fill.className = `conf-fill ${cls}`;
+  fill.style.width = '0%';
+  document.getElementById('conf-pct').textContent = `${confidence}%`;
+  setTimeout(() => { fill.style.width = confidence + '%'; }, 100);
+
+  // Explanation
+  document.getElementById('explanation-text').textContent = explanation;
+
+  // Tips
+  const tipsList = document.getElementById('tips-list');
+  tipsList.innerHTML = tips.map(t => `<li>${t}</li>`).join('');
+
+  // Show card
+  const card = document.getElementById('result-card');
+  card.style.display = 'block';
+  card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  // Update session stats
+  sessionChecks++;
+  if (cls === 'low') { sessionLow++; sessionStreak++; } else { sessionStreak = 0; }
+  document.getElementById('stat-checks').textContent = sessionChecks;
+  document.getElementById('stat-low').textContent    = sessionLow;
+  document.getElementById('stat-streak').textContent = sessionStreak;
+}
+</script>
+</body>
+</html>

@@ -8,7 +8,7 @@ df2 = pd.read_csv("health_activity_data.csv")
 df1.columns = df1.columns.str.strip()
 df2.columns = df2.columns.str.strip()
 
-# ---------------- OPTIONAL UPSAMPLING (for stability, not balancing) ----------------
+# ---------------- OPTIONAL UPSAMPLING ----------------
 df1 = df1.sample(500, replace=True, random_state=42).reset_index(drop=True)
 df2 = df2.sample(500, replace=True, random_state=42).reset_index(drop=True)
 
@@ -59,37 +59,29 @@ combined.fillna(0, inplace=True)
 def classify_diet(row):
     score = 0
 
-    #  Strong health indicators
     score += row["fruits"] * 2
     score += row["vegetables"] * 2
-
-    #  Lifestyle
     score += row["water"] * 0.7
     score += row["exercise"] * 1.2
 
-    #  Sleep (VERY IMPORTANT IRL)
     if row["sleep"] >= 7:
         score += 2
     elif row["sleep"] < 5:
         score -= 2
 
-    # 🍟 Unhealthy habits
     score -= row["fried"] * 1.5
     score -= row["junk_freq"] * 1.5
 
-    # ⚖️ Health conditions
     if row["BMI"] > 30:
         score -= 3
     elif row["BMI"] > 25:
         score -= 1.5
 
-    # 🔥 Calories (non-linear effect)
     if row["calories"] > 3000:
         score -= 2
     elif row["calories"] < 1500:
         score -= 1
 
-    # 🎯 Final classification
     if score >= 6:
         return "Healthy"
     elif score >= 2:
@@ -110,7 +102,7 @@ combined["Diet_Label"] = le.fit_transform(combined["Diet_Label"])
 
 # ---------------- TRAIN ----------------
 from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.tree import DecisionTreeClassifier   # ✅ CHANGED HERE
 
 X = combined.drop("Diet_Label", axis=1)
 y = combined["Diet_Label"]
@@ -118,15 +110,13 @@ y = combined["Diet_Label"]
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42
 )
-from sklearn.ensemble import RandomForestClassifier
 
-
-model = RandomForestClassifier(
-    n_estimators=120,
-    max_depth=4,
-    min_samples_split=15,
+# ---------------- MODEL ----------------
+model = DecisionTreeClassifier(
+    max_depth=5,
+    min_samples_split=10,
     min_samples_leaf=5,
-    class_weight="balanced",   #key line
+    class_weight="balanced",
     random_state=42
 )
 
@@ -137,7 +127,7 @@ y_test_pred = model.predict(X_test)
 y_train_pred = model.predict(X_train)
 
 print("\n📈 Test Accuracy:")
-print(accuracy_score(y_test_pred, y_test))
+print(accuracy_score(y_test, y_test_pred))
 
 print("\n📈 Train Accuracy:")
 print(accuracy_score(y_train_pred, y_train))
@@ -151,4 +141,4 @@ import joblib
 joblib.dump(model, "diet_model.pkl")
 joblib.dump(le, "diet_encoder.pkl")
 
-print("\n✅ Diet model trained successfully!")
+print("\n✅ Decision Tree model trained successfully!")

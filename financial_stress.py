@@ -1,7 +1,11 @@
 import pandas as pd
-import os
+import numpy as np
 from sklearn.metrics import mean_absolute_error, r2_score
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+import joblib
 
+# ---------------- LOAD ----------------
 df = pd.read_csv("data.csv")
 df.columns = df.columns.str.strip()
 
@@ -30,8 +34,6 @@ df["Financial_Stress_Score"] = 100 - df["FWBscore"]
 df = df.drop("FWBscore", axis=1)
 
 # ---------------- SPLIT ----------------
-from sklearn.model_selection import train_test_split
-
 X = df.drop("Financial_Stress_Score", axis=1)
 y = df["Financial_Stress_Score"]
 
@@ -39,16 +41,8 @@ X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42
 )
 
-# ---------------- MODEL ----------------
-from sklearn.ensemble import RandomForestRegressor
-
-model = RandomForestRegressor(
-    n_estimators=120,
-    max_depth=6,
-    min_samples_split=10,
-    min_samples_leaf=4,
-    random_state=42
-)
+# ---------------- MODEL (LINEAR REGRESSION) ----------------
+model = LinearRegression()
 
 model.fit(X_train, y_train)
 
@@ -61,9 +55,34 @@ print(mean_absolute_error(y_test, y_pred))
 print("\n📊 R2 Score:")
 print(r2_score(y_test, y_pred))
 
-# ---------------- SAVE ----------------
-import joblib
+# ---------------- OPTIONAL (UNDERSTANDING MODEL) ----------------
+print("\n📌 Coefficients:")
+for col, coef in zip(X.columns, model.coef_):
+    print(f"{col}: {coef:.2f}")
 
+print("\n📌 Intercept:")
+print(model.intercept_)
+
+# ---------------- CONVERT TO LABELS ----------------
+
+def get_label(val):
+    if val < 33:
+        return 0   # Low
+    elif val < 66:
+        return 1   # Moderate
+    else:
+        return 2   # High
+
+y_pred_labels = [get_label(v) for v in y_pred]
+y_test_labels = [get_label(v) for v in y_test]
+from sklearn.metrics import accuracy_score, classification_report
+
+print("\n Classification Accuracy:")
+print(accuracy_score(y_test_labels, y_pred_labels))
+
+print("\n Classification Report:")
+print(classification_report(y_test_labels, y_pred_labels))
+# ---------------- SAVE ----------------
 joblib.dump(model, "financial_stress_regressor.pkl")
 
-print("\n✅ Financial Stress model saved successfully!")
+print("\nLinear Regression model saved successfully!")

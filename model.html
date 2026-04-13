@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>MindMate – Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+
+  <style>
+    /* ===== RESULT BADGE ===== */
+    .result-badge {
+      display: inline-block;
+      padding: 10px 20px;
+      border-radius: 999px;
+      font-weight: 700;
+      margin-top: 15px;
+      font-size: 16px;
+    }
+
+    /* COLORS */
+    .low {
+      background: rgba(93,186,126,0.15);
+      color: #1a7a3a;
+    }
+
+    .moderate {
+      background: rgba(245,200,66,0.2);
+      color: #856a00;
+    }
+
+    .high {
+      background: rgba(240,97,107,0.2);
+      color: #b91c2a;
+    }
+
+    /* CARD COLOR CHANGE */
+    .card.low {
+      border: 2px solid #5dba7e;
+    }
+
+    .card.moderate {
+      border: 2px solid #f5c842;
+    }
+
+    .card.high {
+      border: 2px solid #f0616b;
+    }
+  </style>
+
+</head>
+<body>
+
+<div class="dashboard">
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">🧠</div>
+    <h1>MindMate</h1>
+  </div>
+</header>
+
+<div class="grid">
+
+<!-- ================= DEPRESSION ================= -->
+<div class="card grid-left" id="depression-card">
+
+  <div class="card-title">🧾 Depression Assessment</div>
+  <div class="card-subtitle">0 = Not at all • 3 = Nearly every day</div>
+
+  <div class="form-grid">
+
+    <script>
+      const questions = [
+        ["q1_sad","😔 Feeling sad"],
+        ["q2_interest","😶 Loss of interest"],
+        ["q3_sleep","😴 Sleep issues"],
+        ["q4_energy","⚡ Low energy"],
+        ["q5_appetite","🍽 Appetite changes"],
+        ["q6_guilt","😞 Guilt / worthlessness"],
+        ["q7_focus","🧠 Trouble focusing"],
+        ["q8_movement","🐢 Slow / restless"],
+        ["q9_selfharm","⚠️ Self-harm thoughts"]
+      ];
+
+      document.write(questions.map((q,i)=>`
+        <div class="form-group">
+          <label>${q[1]}</label>
+          <div class="range-wrapper">
+            <input type="range" id="${q[0]}" min="0" max="3" value="1"
+              oninput="updateRange('${q[0]}','q${i+1}_val')">
+            <span class="range-value" id="q${i+1}_val">1</span>
+          </div>
+        </div>
+      `).join(""));
+    </script>
+
+  </div>
+
+  <button class="btn-predict" onclick="predictDepression()">🔮 Predict Depression</button>
+
+  <div id="dep-result" style="display:none;margin-top:15px;">
+    <div id="dep-badge" class="result-badge"></div>
+  </div>
+
+</div>
+
+
+<!-- ================= FINANCIAL ================= -->
+<div class="card grid-right" id="financial-card">
+
+  <div class="card-title">💰 Financial Stress</div>
+  <div class="card-subtitle">Answer based on your financial wellbeing</div>
+
+  <div class="form-grid">
+
+    <script>
+      const fQuestions = [
+        ["f1","📊 Financial Confidence"],
+        ["f2","💸 Expense Control"],
+        ["f3","🏦 Savings Stability"],
+        ["f4","😊 Life Satisfaction"],
+        ["f5","📈 Future Outlook"],
+        ["f6","😰 Stress Level"],
+        ["f7","📊 Income Level"]
+      ];
+
+      document.write(fQuestions.map((q)=>`
+        <div class="form-group">
+          <label>${q[1]}</label>
+          <div class="range-wrapper">
+            <input type="range" id="${q[0]}" min="0" max="5" value="2"
+              oninput="updateRange('${q[0]}','${q[0]}_val')">
+            <span class="range-value" id="${q[0]}_val">2</span>
+          </div>
+        </div>
+      `).join(""));
+    </script>
+
+  </div>
+
+  <button class="btn-predict" onclick="predictFinancial()">💰 Predict Financial Stress</button>
+
+  <div id="fin-result" style="display:none;margin-top:15px;">
+    <div id="fin-score" class="result-title"></div>
+  </div>
+
+</div> <!-- ✅ FIXED: CLOSED FINANCIAL CARD -->
+
+
+<!-- ================= DIET ================= -->
+<div class="card grid-left" id="diet-card">
+
+  <div class="card-title">🥗 Diet Assessment</div>
+  <div class="card-subtitle">Tell us about your eating habits</div>
+
+  <div class="form-grid">
+
+    <div class="form-group">
+      <label>🍽 Meals per day</label>
+      <input type="number" id="meals" value="3">
+    </div>
+
+    <div class="form-group">
+      <label>🍔 Junk food frequency</label>
+      <input type="number" id="junk_freq" value="2">
+    </div>
+
+    <div class="form-group">
+      <label>🍎 Fruits</label>
+      <select id="fruits">
+        <option>Never</option><option>Rarely</option><option selected>Sometimes</option>
+        <option>Often</option><option>Always</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>🥦 Vegetables</label>
+      <select id="vegetables">
+        <option>Never</option><option>Rarely</option><option selected>Sometimes</option>
+        <option>Often</option><option>Always</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>🍟 Fried</label>
+      <select id="fried">
+        <option>Never</option><option>Rarely</option><option selected>Sometimes</option>
+        <option>Often</option><option>Always</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>💧 Water</label>
+      <input type="number" id="water" value="6">
+    </div>
+
+    <div class="form-group">
+      <label>⚖ BMI</label>
+      <input type="number" id="BMI" value="22">
+    </div>
+
+    <div class="form-group">
+      <label>😴 Sleep</label>
+      <input type="number" id="sleep" value="7">
+    </div>
+
+    <div class="form-group">
+      <label>🏃 Exercise</label>
+      <input type="number" id="exercise" value="3">
+    </div>
+
+    <div class="form-group">
+      <label>🔥 Calories</label>
+      <input type="number" id="calories" value="2000">
+    </div>
+
+  </div>
+
+  <button class="btn-predict" onclick="predictDiet()">🥗 Predict Diet</button>
+
+  <div id="diet-result" style="display:none;margin-top:15px;">
+    <div id="diet-badge" class="result-badge"></div>
+  </div>
+
+</div>
+
+
+<!-- ================= ACADEMIC ================= -->
+<div class="card grid-right" id="academic-card">
+
+  <div class="card-title">📚 Academic Stress</div>
+
+  <div class="form-grid">
+
+    <div class="form-group">
+      <label>📖 Competition</label>
+      <input type="number" id="competition" value="5">
+    </div>
+
+    <div class="form-group">
+      <label>🏠 Home Pressure</label>
+      <input type="number" id="home_pressure" value="5">
+    </div>
+
+    <div class="form-group">
+      <label>👥 Peer Pressure</label>
+      <input type="number" id="peer_pressure" value="5">
+    </div>
+
+    <div class="form-group">
+      <label>🧠 Coping</label>
+      <select id="coping_strategy">
+        <option>Healthy</option>
+        <option>Moderate</option>
+        <option>Unhealthy</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>🏫 Environment</label>
+      <select id="study_environment">
+        <option>Good</option>
+        <option>Average</option>
+        <option>Poor</option>
+      </select>
+    </div>
+
+  </div>
+
+  <button class="btn-predict" onclick="predictAcademic()">📚 Predict Academic</button>
+
+  <div id="acad-result" style="display:none;margin-top:15px;">
+    <div id="acad-badge" class="result-badge"></div>
+  </div>
+
+</div>
+
+</div>
+</div>
+
+<script>
+
+// ================= RANGE UI =================
+function updateRange(inputId, spanId) {
+  const input = document.getElementById(inputId);
+  const val = input.value;
+
+  document.getElementById(spanId).textContent = val;
+
+  const pct = (val / input.max) * 100;
+
+  input.style.background =
+    `linear-gradient(to right, #8b5cf6 ${pct}%, rgba(180,160,140,0.2) ${pct}%)`;
+}
+
+// ✅ INIT ALL SLIDERS ON LOAD (IMPORTANT)
+window.onload = () => {
+  document.querySelectorAll("input[type=range]").forEach(input => {
+    const id = input.id;
+
+    let valId;
+
+    if(id.startsWith("q")){
+      valId = id.replace(/q(\d+)/, "q$1_val");
+    } else {
+      valId = id + "_val";
+    }
+
+    if (document.getElementById(valId)) {
+      updateRange(id, valId);
+    }
+  });
+};
+
+
+
+// ================= DEPRESSION =================
+async function predictDepression(){
+
+  const res = await fetch("http://localhost:3000/predict-depression",{
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({
+      q1:+q1_sad.value,q2:+q2_interest.value,q3:+q3_sleep.value,
+      q4:+q4_energy.value,q5:+q5_appetite.value,q6:+q6_guilt.value,
+      q7:+q7_focus.value,q8:+q8_movement.value,q9:+q9_selfharm.value
+    })
+  });
+
+  const data = await res.json();
+
+  const prediction = data.prediction.toLowerCase();
+
+  const card = document.getElementById("depression-card");
+  const badge = document.getElementById("dep-badge");
+
+  card.classList.remove("low","moderate","high");
+  badge.classList.remove("low","moderate","high");
+
+  card.classList.add(prediction);
+  badge.classList.add(prediction);
+
+  badge.innerText = data.prediction;
+
+  document.getElementById("dep-result").style.display = "block";
+}
+
+
+
+// ================= FINANCIAL =================
+async function predictFinancial(){
+
+  const res = await fetch("http://localhost:3000/predict-financial",{
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({
+      FWB1_1:+f1.value,
+      FWB1_2:+f2.value,
+      FWB1_3:+f3.value,
+      SWB_1:+f4.value,
+      SWB_2:+f5.value,
+      SWB_3:+f6.value,
+      fpl:+f7.value
+    })
+  });
+
+  const data = await res.json();
+
+  document.getElementById("fin-score").innerText =
+    "Financial Stress Score: " + data.financialStress;
+
+  document.getElementById("fin-result").style.display = "block";
+}
+
+
+
+// ================= DIET =================
+async function predictDiet(){
+
+  const res = await fetch("http://localhost:3000/predict-diet",{
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({
+      meals:+meals.value,
+      junk_freq:+junk_freq.value,
+      fruits:fruits.value,
+      vegetables:vegetables.value,
+      fried:fried.value,
+      water:+water.value,
+      BMI:+BMI.value,
+      sleep:+sleep.value,
+      exercise:+exercise.value,
+      calories:+calories.value
+    })
+  });
+
+  const data = await res.json();
+
+  if (!data || !data.prediction) {
+    alert("Diet prediction failed");
+    return;
+  }
+
+  const prediction = data.prediction.toLowerCase();
+
+  let level = "moderate";
+  if(prediction === "healthy") level = "low";
+  else if(prediction === "moderate") level = "moderate";
+  else level = "high";
+
+  const card = document.getElementById("diet-card");
+  const badge = document.getElementById("diet-badge");
+
+  card.classList.remove("low","moderate","high");
+  badge.classList.remove("low","moderate","high");
+
+  card.classList.add(level);
+  badge.classList.add(level);
+
+  badge.innerText = data.prediction;
+
+  document.getElementById("diet-result").style.display = "block";
+}
+
+
+
+// ================= ACADEMIC =================
+async function predictAcademic(){
+
+  const res = await fetch("http://localhost:3000/predict-academic",{
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({
+      academic_competition:+competition.value,
+      home_pressure:+home_pressure.value,
+      peer_pressure:+peer_pressure.value,
+      coping_strategy:coping_strategy.value,
+      study_environment:study_environment.value
+    })
+  });
+
+  const data = await res.json();
+
+  if (!data || !data.level) {
+    alert("Academic prediction failed");
+    return;
+  }
+
+  const level = data.level.toLowerCase();
+
+  const card = document.getElementById("academic-card");
+  const badge = document.getElementById("acad-badge");
+
+  card.classList.remove("low","moderate","high");
+  badge.classList.remove("low","moderate","high");
+
+  card.classList.add(level);
+  badge.classList.add(level);
+
+  badge.innerText = data.level;
+
+  document.getElementById("acad-result").style.display = "block";
+}
+
+</script></body>
+</html>

@@ -11,7 +11,7 @@ app.use(express.json());
 const db = mysql.createConnection({
   host: "localhost",
   user: "root",
-  password: "", 
+  password: "Shauryas@8092", 
   database: "mindmate_db"
 });
 
@@ -75,71 +75,196 @@ app.post("/login", (req, res) => {
   );
 });
 
-/* ===============================
-   PREDICT + SAVE TO DB
-================================ */
-app.post("/predict", (req, res) => {
+app.post("/predict-stress", (req, res) => {
   const inputData = req.body;
 
-  const py = spawn("python", ["predict.py", JSON.stringify(inputData)]);
+  const py = spawn("python", ["predict_stress.py", JSON.stringify(inputData)]);
 
   let result = "";
   let error = "";
 
-  py.stdout.on("data", (data) => {
-    result += data.toString();
-  });
-
-  py.stderr.on("data", (data) => {
-    error += data.toString();
-  });
+  py.stdout.on("data", (data) => result += data.toString());
+  py.stderr.on("data", (data) => error += data.toString());
 
   py.on("close", (code) => {
     if (code !== 0) {
-      return res.status(500).json({ error });
+      console.error("Python Error:", error);
+      return res.status(500).json({ error: "Stress model failed" });
     }
 
     try {
       const output = JSON.parse(result);
 
-      // 🔥 SAVE TO DATABASE
       const {
         sleep, work_hours, activity, social, stress_self, user_id
       } = inputData;
 
-      const {
-        prediction, confidence,
-        academic_pressure, study_satisfaction,
-        dietary_habits, financial_stress, depression
-      } = output;
+      const { prediction, confidence } = output;
 
       db.query(
         `INSERT INTO checkins 
         (user_id, sleep, work_hours, activity, social, stress_self,
-         prediction, confidence,
-         academic_pressure, study_satisfaction,
-         dietary_habits, financial_stress, depression)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         prediction, confidence)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           user_id,
           sleep, work_hours, activity, social, stress_self,
-          prediction, confidence,
-          academic_pressure, study_satisfaction,
-          dietary_habits, financial_stress, depression
-        ]
+          prediction, confidence
+        ],
+        (err) => {
+          if (err) console.error("Stress DB Error:", err);
+        }
       );
 
       res.json(output);
 
     } catch (err) {
-      res.status(500).json({ error: "Invalid model output" });
+      console.error("Parse Error:", err);
+      res.status(500).json({ error: "Invalid stress model output" });
     }
   });
 });
 
+
 /* ===============================
-   START SERVER
+   DEPRESSION PREDICTION (NEW PAGE)
 ================================ */
+app.post("/predict-depression", (req, res) => {
+  const inputData = req.body;
+
+  // ✅ FIXED FILE NAME
+  const py = spawn("python", ["predict_depression.py", JSON.stringify(inputData)]);
+
+  let result = "";
+  let error = "";
+
+  py.stdout.on("data", (data) => result += data.toString());
+  py.stderr.on("data", (data) => error += data.toString());
+
+  py.on("close", (code) => {
+    if (code !== 0) {
+      console.error("Python Error:", error);
+      return res.status(500).json({ error: "Depression model failed" });
+    }
+
+    try {
+      const output = JSON.parse(result);
+
+      const {
+        q1, q2, q3, q4, q5, q6, q7, q8, q9,
+        user_id
+      } = inputData;
+
+      const { prediction, confidence } = output;
+
+      db.query(
+        `INSERT INTO depression_checkins 
+        (user_id, q1_sad, q2_interest, q3_sleep, q4_energy,
+         q5_appetite, q6_guilt, q7_focus, q8_movement, q9_selfharm,
+         prediction, confidence)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          user_id,
+          q1, q2, q3, q4,
+          q5, q6, q7, q8, q9,
+          prediction, confidence
+        ],
+        (err) => {
+          if (err) console.error("Depression DB Error:", err);
+        }
+      );
+
+      res.json(output);
+
+    } catch (err) {
+      console.error("Parse Error:", err);
+      res.status(500).json({ error: "Invalid depression model output" });
+    }
+  });
+});
 app.listen(3000, () => {
   console.log("🚀 Server running on http://localhost:3000");
+});
+
+app.post("/predict-financial", (req, res) => {
+  const inputData = req.body;
+
+  const py = spawn("python", ["predict_finstress.py", JSON.stringify(inputData)]);
+
+  let result = "";
+  let error = "";
+
+  py.stdout.on("data", d => result += d.toString());
+  py.stderr.on("data", d => error += d.toString());
+
+  py.on("close", code => {
+    if (code !== 0) {
+      console.error(error);
+      return res.status(500).json({ error: "Financial model failed" });
+    }
+
+    try {
+      res.json(JSON.parse(result));
+    } catch {
+      res.status(500).json({ error: "Invalid output" });
+    }
+    
+
+    console.log("Python output:", result);
+  });
+});
+app.post("/predict-diet", (req, res) => {
+  const inputData = req.body;
+
+  const py = spawn("python", ["predict_diet.py", JSON.stringify(inputData)]);
+
+  let result = "";
+  let error = "";
+
+  py.stdout.on("data", (data) => result += data.toString());
+  py.stderr.on("data", (data) => error += data.toString());
+
+  py.on("close", (code) => {
+  
+  if (code !== 0) {
+    return res.status(500).json({ error: "Diet model failed" });
+  }
+
+  try {
+    const output = JSON.parse(result.trim());
+    res.json(output);
+  } catch (err) {
+    console.error("PARSE ERROR:", err);
+    res.status(500).json({ error: "Invalid output" });
+  }
+});
+});
+
+app.post("/predict-academic", (req, res) => {
+  const inputData = req.body;
+
+  const py = spawn("python", ["predict_academic.py", JSON.stringify(inputData)]);
+
+  let result = "";
+  let error = "";
+
+  py.stdout.on("data", (data) => result += data.toString());
+  py.stderr.on("data", (data) => error += data.toString());
+
+  py.on("close", (code) => {
+
+    if (code !== 0) {
+      console.error("Academic Error:", error);
+      return res.status(500).json({ error: "Academic model failed" });
+    }
+
+    try {
+      const output = JSON.parse(result.trim());
+      res.json(output);
+    } catch (err) {
+      console.error("Parse Error:", err);
+      res.status(500).json({ error: "Invalid academic output" });
+    }
+
+  });
 });

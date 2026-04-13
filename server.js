@@ -243,28 +243,37 @@ app.post("/predict-diet", (req, res) => {
 app.post("/predict-academic", (req, res) => {
   const inputData = req.body;
 
+  console.log("🔥 Incoming Academic Input:", inputData);
+
   const py = spawn("python", ["predict_academic.py", JSON.stringify(inputData)]);
 
   let result = "";
   let error = "";
 
-  py.stdout.on("data", (data) => result += data.toString());
-  py.stderr.on("data", (data) => error += data.toString());
+  py.stdout.on("data", (data) => {
+    console.log("🐍 PYTHON STDOUT:", data.toString());
+    result += data.toString();
+  });
+
+  py.stderr.on("data", (data) => {
+    console.log("❌ PYTHON ERROR:", data.toString());
+    error += data.toString();
+  });
 
   py.on("close", (code) => {
+    console.log("🧠 Python exited with code:", code);
 
     if (code !== 0) {
-      console.error("Academic Error:", error);
       return res.status(500).json({ error: "Academic model failed" });
     }
 
     try {
+      console.log("📦 RAW RESULT:", result);
       const output = JSON.parse(result.trim());
       res.json(output);
     } catch (err) {
-      console.error("Parse Error:", err);
+      console.error("❌ Parse Error:", err);
       res.status(500).json({ error: "Invalid academic output" });
     }
-
   });
 });

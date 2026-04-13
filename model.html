@@ -364,6 +364,7 @@ async function predictFinancial(){
   });
 
   const data = await res.json();
+console.log("ACADEMIC RESPONSE:", data);
 
   document.getElementById("fin-score").innerText =
     "Financial Stress Score: " + data.financialStress;
@@ -439,6 +440,7 @@ async function predictAcademic(){
   });
 
   const data = await res.json();
+  console.log("ACADEMIC RESPONSE:", data);
 
   if (!data || !data.level) {
     alert("Academic prediction failed");

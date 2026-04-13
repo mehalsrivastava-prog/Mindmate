@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MindMate – Login</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #f5f0ff 0%, #fce4ec 40%, #e8f5e9 100%);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      position: relative;
+      overflow: hidden;
+    }
+    .brain-bg {
+      position: absolute;
+      left: -60px;
+      top: 50%;
+      transform: translateY(-50%);
+      opacity: 0.08;
+      width: 340px;
+      pointer-events: none;
+    }
+    .card {
+      background: rgba(255, 255, 255, 0.88);
+      border-radius: 20px;
+      border: 0.5px solid rgba(160, 120, 220, 0.18);
+      padding: 2rem 2.25rem 1.75rem;
+      width: 100%;
+      max-width: 420px;
+      position: relative;
+      z-index: 2;
+    }
+    .logo-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 0.25rem;
+    }
+    .logo-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #a78bfa, #ec4899);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+    .logo-text {
+      font-size: 22px;
+      font-weight: 500;
+      color: #7c3aed;
+    }
+    .tagline {
+      font-size: 13px;
+      color: #888;
+      margin-bottom: 1.75rem;
+    }
+    .panel-title {
+      font-size: 17px;
+      font-weight: 500;
+      color: #1a1a1a;
+      margin-bottom: 1.25rem;
+    }
+    label {
+      display: block;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.06em;
+      color: #888;
+      margin-bottom: 5px;
+      text-transform: uppercase;
+    }
+    input[type=email],
+    input[type=password],
+    input[type=text] {
+      width: 100%;
+      border-radius: 8px;
+      border: 0.5px solid #ddd;
+      padding: 9px 12px;
+      font-size: 14px;
+      font-family: inherit;
+      color: #1a1a1a;
+      background: #ffffff;
+      margin-bottom: 1rem;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    input:focus {
+      border-color: #a78bfa;
+      box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.15);
+    }
+    .btn-login {
+      width: 100%;
+      padding: 11px 0;
+      border-radius: 50px;
+      border: none;
+      background: linear-gradient(90deg, #8b5cf6, #ec4899);
+      color: white;
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: inherit;
+      margin-top: 0.5rem;
+      transition: opacity 0.15s, transform 0.1s;
+      opacity: 0.4;
+      pointer-events: none;
+    }
+    .btn-login.active {
+      opacity: 1;
+      pointer-events: all;
+    }
+    .btn-login.active:hover { opacity: 0.9; }
+    .btn-login.active:active { transform: scale(0.98); }
+    .btn-main {
+      width: 100%;
+      padding: 11px 0;
+      border-radius: 50px;
+      border: none;
+      background: linear-gradient(90deg, #8b5cf6, #ec4899);
+      color: white;
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: inherit;
+      margin-top: 0.5rem;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+    .btn-main:hover { opacity: 0.9; }
+    .btn-main:active { transform: scale(0.98); }
+    .bottom-note {
+      text-align: center;
+      font-size: 13px;
+      color: #888;
+      margin-top: 1rem;
+    }
+    .bottom-note span {
+      color: #7c3aed;
+      cursor: pointer;
+      font-weight: 500;
+    }
+    .signup-panel { display: none; }
+    .login-panel { display: block; }
+  </style>
+</head>
+<body>
+
+  <svg class="brain-bg" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="100" cy="100" r="80" stroke="#7c3aed" stroke-width="3" fill="none"/>
+    <path d="M60 100 Q80 60 100 80 Q120 60 140 100 Q120 140 100 120 Q80 140 60 100Z" stroke="#ec4899" stroke-width="2.5" fill="none"/>
+    <circle cx="100" cy="100" r="20" stroke="#7c3aed" stroke-width="2" fill="none"/>
+    <path d="M100 80 L100 60 M100 120 L100 140 M80 100 L60 100 M120 100 L140 100" stroke="#7c3aed" stroke-width="2"/>
+  </svg>
+
+  <div class="card">
+    <div class="logo-row">
+      <div class="logo-icon">🧠</div>
+      <div class="logo-text">MindMate</div>
+    </div>
+    <p class="tagline">Your daily mental wellness companion</p>
+
+    <!-- Login Panel -->
+    <div class="login-panel" id="panel-login">
+      <p class="panel-title">Welcome back</p>
+      <label>Email</label>
+      <input type="email" id="login-email" placeholder="you@example.com" oninput="checkLogin()" />
+      <label>Password</label>
+      <input type="password" id="login-password" placeholder="••••••••" oninput="checkLogin()" />
+      <button class="btn-login" id="btn-login" onclick="doLogin()">Login</button>
+      <p class="bottom-note">Don't have an account? <span onclick="showPanel('signup')">Create new account</span></p>
+    </div>
+
+    <!-- Signup Panel -->
+    <div class="signup-panel" id="panel-signup">
+      <p class="panel-title">Create your account</p>
+      <label>Full name</label>
+      <input type="text" placeholder="Your name" />
+      <label>Email</label>
+      <input type="email" placeholder="you@example.com" />
+      <label>Password</label>
+      <input type="password" placeholder="Choose a password" />
+      <button class="btn-main" onclick="doSignup()">Create my account</button>
+      <p class="bottom-note">Already have an account? <span onclick="showPanel('login')">Sign in</span></p>
+    </div>
+  </div>
+
+  <script>
+function checkLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value.trim();
+  const btn = document.getElementById('btn-login');
+
+  if (email && password) btn.classList.add('active');
+  else btn.classList.remove('active');
+}
+
+function showPanel(p) {
+  document.getElementById('panel-login').style.display = p === 'login' ? 'block' : 'none';
+  document.getElementById('panel-signup').style.display = p === 'signup' ? 'block' : 'none';
+}
+
+/* ===============================
+   LOGIN FUNCTION
+================================ */
+async function doLogin() {
+  const email = document.getElementById('login-email').value;
+  const password = document.getElementById('login-password').value;
+
+  const res = await fetch("http://localhost:3000/login", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ email, password })
+  });
+
+  const data = await res.json();
+
+  if (data.success) {
+    localStorage.setItem("user_id", data.user_id);
+    window.location.href = "index.html"; // dashboard page
+  } else {
+    alert(data.error);
+  }
+}
+
+/* ===============================
+   SIGNUP FUNCTION
+================================ */
+async function doSignup() {
+  const name = document.querySelector('#panel-signup input[type="text"]').value;
+  const email = document.querySelector('#panel-signup input[type="email"]').value;
+  const password = document.querySelector('#panel-signup input[type="password"]').value;
+
+  const res = await fetch("http://localhost:3000/signup", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ name, email, password })
+  });
+
+  const data = await res.json();
+
+  if (data.success) {
+    alert("Signup successful! Please login.");
+    showPanel("login");
+  } else {
+    alert(data.error);
+  }
+}
+</script>
+
+</body>
+</html>

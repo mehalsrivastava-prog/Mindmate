@@ -78,7 +78,7 @@ app.post("/login", (req, res) => {
 app.post("/predict-stress", (req, res) => {
   const inputData = req.body;
 
-  const py = spawn("python", ["predict_stress.py", JSON.stringify(inputData)]);
+  const py = spawn("python", ["predict_master.py", JSON.stringify(inputData)]);
 
   let result = "";
   let error = "";
@@ -87,40 +87,18 @@ app.post("/predict-stress", (req, res) => {
   py.stderr.on("data", (data) => error += data.toString());
 
   py.on("close", (code) => {
+
     if (code !== 0) {
       console.error("Python Error:", error);
-      return res.status(500).json({ error: "Stress model failed" });
+      return res.status(500).json({ error: "Master model failed" });
     }
 
     try {
-      const output = JSON.parse(result);
-
-      const {
-        sleep, work_hours, activity, social, stress_self, user_id
-      } = inputData;
-
-      const { prediction, confidence } = output;
-
-      db.query(
-        `INSERT INTO checkins 
-        (user_id, sleep, work_hours, activity, social, stress_self,
-         prediction, confidence)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          user_id,
-          sleep, work_hours, activity, social, stress_self,
-          prediction, confidence
-        ],
-        (err) => {
-          if (err) console.error("Stress DB Error:", err);
-        }
-      );
-
+      const output = JSON.parse(result.trim());
       res.json(output);
-
     } catch (err) {
       console.error("Parse Error:", err);
-      res.status(500).json({ error: "Invalid stress model output" });
+      res.status(500).json({ error: "Invalid master model output" });
     }
   });
 });

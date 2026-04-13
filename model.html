@@ -32,6 +32,21 @@
       color: #b91c2a;
     }
 
+    .card.low {
+  border: 2px solid #22c55e;
+  background: rgba(34,197,94,0.15);
+}
+
+.card.moderate {
+  border: 2px solid #facc15;
+  background: rgba(250,204,21,0.15);
+}
+
+.card.high {
+  border: 2px solid #ef4444;
+  background: rgba(239,68,68,0.15);
+}
+
     /* CARD COLOR CHANGE */
     .card.low {
       border: 2px solid #5dba7e;
@@ -44,6 +59,11 @@
     .card.high {
       border: 2px solid #f0616b;
     }
+
+    #master-card {
+      margin-top: 30px;
+    }
+    
   </style>
 
 </head>
@@ -98,8 +118,9 @@
   <button class="btn-predict" onclick="predictDepression()">🔮 Predict Depression</button>
 
   <div id="dep-result" style="display:none;margin-top:15px;">
-    <div id="dep-badge" class="result-badge"></div>
-  </div>
+  <div id="dep-badge" class="result-badge"></div>
+  <div id="dep-tips" style="margin-top:10px;"></div>
+</div>
 
 </div>
 
@@ -218,8 +239,9 @@
   <button class="btn-predict" onclick="predictDiet()">🥗 Predict Diet</button>
 
   <div id="diet-result" style="display:none;margin-top:15px;">
-    <div id="diet-badge" class="result-badge"></div>
-  </div>
+  <div id="diet-badge" class="result-badge"></div>
+  <div id="diet-tips" style="margin-top:10px;"></div>
+</div>
 
 </div>
 
@@ -269,10 +291,25 @@
   <button class="btn-predict" onclick="predictAcademic()">📚 Predict Academic</button>
 
   <div id="acad-result" style="display:none;margin-top:15px;">
-    <div id="acad-badge" class="result-badge"></div>
-  </div>
+  <div id="acad-badge" class="result-badge"></div>
+  <div id="acad-tips" style="margin-top:10px;"></div>
+</div>
 
 </div>
+
+</div>
+<div class="card grid-right" id="master-card">
+
+  <div class="card-title">🧠 Overall Stress Prediction</div>
+
+  <button class="btn-predict" onclick="predictOverall()">
+    ⚡ Predict Overall Stress
+  </button>
+
+  <div id="master-result" style="display:none;margin-top:15px;">
+    <div id="master-badge" class="result-badge"></div>
+    <div id="master-tips" style="margin-top:10px;"></div>
+  </div>
 
 </div>
 </div>
@@ -342,6 +379,17 @@ async function predictDepression(){
   badge.innerText = data.prediction;
 
   document.getElementById("dep-result").style.display = "block";
+  const tips = document.getElementById("dep-tips");
+
+if(prediction === "low"){
+  tips.innerText = "You are doing well mentally. Keep it up!";
+}
+else if(prediction === "moderate"){
+  tips.innerText = "Try relaxing activities and talk to friends.";
+}
+else{
+  tips.innerText = "High stress. Please consider talking to someone you trust.";
+}
 }
 
 
@@ -420,6 +468,17 @@ async function predictDiet(){
   badge.innerText = data.prediction;
 
   document.getElementById("diet-result").style.display = "block";
+  const tips = document.getElementById("diet-tips");
+
+if(level === "low"){
+  tips.innerText = "Great job! Maintain your healthy diet.";
+}
+else if(level === "moderate"){
+  tips.innerText = "Try reducing junk food and eat more fruits.";
+}
+else{
+  tips.innerText = "Your diet needs improvement. Avoid fried food and drink more water.";
+}
 }
 
 
@@ -461,7 +520,125 @@ async function predictAcademic(){
   badge.innerText = data.level;
 
   document.getElementById("acad-result").style.display = "block";
+  const tips = document.getElementById("acad-tips");
+
+if(level === "low"){
+  tips.innerText = "Good academic balance. Keep going!";
+}
+else if(level === "moderate"){
+  tips.innerText = "Manage time better and take breaks.";
+}
+else{
+  tips.innerText = "High academic stress. Reduce pressure and seek help.";
+}
 }
 
+async function predictOverall(){
+
+  try {
+
+    // 1️⃣ CALL ALL MODELS FIRST
+    const [dep, fin, diet, acad] = await Promise.all([
+      fetch("http://localhost:3000/predict-depression", {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({
+          q1:+q1_sad.value,q2:+q2_interest.value,q3:+q3_sleep.value,
+          q4:+q4_energy.value,q5:+q5_appetite.value,q6:+q6_guilt.value,
+          q7:+q7_focus.value,q8:+q8_movement.value,q9:+q9_selfharm.value
+        })
+      }).then(r=>r.json()),
+
+      fetch("http://localhost:3000/predict-financial", {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({
+          FWB1_1:+f1.value,
+          FWB1_2:+f2.value,
+          FWB1_3:+f3.value,
+          SWB_1:+f4.value,
+          SWB_2:+f5.value,
+          SWB_3:+f6.value,
+          fpl:+f7.value
+        })
+      }).then(r=>r.json()),
+
+      fetch("http://localhost:3000/predict-diet", {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({
+          meals:+meals.value,
+          junk_freq:+junk_freq.value,
+          fruits:fruits.value,
+          vegetables:vegetables.value,
+          fried:fried.value,
+          water:+water.value,
+          BMI:+BMI.value,
+          sleep:+sleep.value,
+          exercise:+exercise.value,
+          calories:+calories.value
+        })
+      }).then(r=>r.json()),
+
+      fetch("http://localhost:3000/predict-academic", {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({
+          academic_competition:+competition.value,
+          home_pressure:+home_pressure.value,
+          peer_pressure:+peer_pressure.value,
+          coping_strategy:coping_strategy.value,
+          study_environment:study_environment.value
+        })
+      }).then(r=>r.json())
+    ]);
+
+    // 2️⃣ SEND TO MASTER MODEL
+    const masterRes = await fetch("http://localhost:3000/predict-stress", {
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify({
+        depression: dep.prediction,
+        financial: fin.financialStress,
+        diet: diet.prediction,
+        academic: acad.level
+      })
+    });
+
+    const data = await masterRes.json();
+
+    // 3️⃣ UI UPDATE
+    const level = data.prediction.toLowerCase();
+
+    const card = document.getElementById("master-card");
+    const badge = document.getElementById("master-badge");
+
+    card.classList.remove("low","moderate","high");
+    badge.classList.remove("low","moderate","high");
+
+    card.classList.add(level);
+    badge.classList.add(level);
+
+    badge.innerText = data.prediction;
+
+    document.getElementById("master-result").style.display = "block";
+
+    const tips = document.getElementById("master-tips");
+
+    if(level === "low"){
+      tips.innerText = "You're doing great. Maintain balance.";
+    }
+    else if(level === "moderate"){
+      tips.innerText = "Try improving sleep, diet & time management.";
+    }
+    else{
+      tips.innerText = "High stress detected. Take breaks & seek support.";
+    }
+
+  } catch(err){
+    console.error(err);
+    alert("Master prediction failed");
+  }
+}
 </script></body>
 </html>

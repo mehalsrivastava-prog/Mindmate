@@ -16,7 +16,7 @@ try {
   db = mysql.createConnection({
     host: "localhost",
     user: "root",
-    password: "Laasya@123", // ⚠️ change if needed
+    password: "mehal123", // ⚠️ change if needed
     database: "mindmate_db"
   });
 

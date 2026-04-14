@@ -8,21 +8,20 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+/* ================= DB CONNECTION ================= */
 const db = mysql.createConnection({
   host: "localhost",
   user: "root",
-  password: "Shauryas@8092", 
+  password: "mehal123",
   database: "mindmate_db"
 });
 
 db.connect(err => {
-  if (err) {
-    console.error("DB connection error:", err);
-  } else {
-    console.log("✅ Connected to MySQL");
-  }
+  if (err) console.error("❌ DB connection error:", err);
+  else console.log("✅ Connected to MySQL");
 });
 
+/* ================= AUTH ================= */
 
 app.post("/signup", async (req, res) => {
   const { name, email, password } = req.body;
@@ -33,14 +32,12 @@ app.post("/signup", async (req, res) => {
     db.query(
       "INSERT INTO users (name, email, password) VALUES (?, ?, ?)",
       [name, email, hashedPassword],
-      (err, result) => {
-        if (err) {
-          return res.status(400).json({ error: "Email already exists" });
-        }
+      (err) => {
+        if (err) return res.status(400).json({ error: "Email exists" });
         res.json({ success: true });
       }
     );
-  } catch (err) {
+  } catch {
     res.status(500).json({ error: "Signup failed" });
   }
 });
@@ -53,18 +50,12 @@ app.post("/login", (req, res) => {
     [email],
     async (err, results) => {
       if (err) return res.status(500).json({ error: err });
-
-      if (results.length === 0) {
-        return res.status(400).json({ error: "User not found" });
-      }
+      if (results.length === 0) return res.status(400).json({ error: "User not found" });
 
       const user = results[0];
-
       const match = await bcrypt.compare(password, user.password);
 
-      if (!match) {
-        return res.status(400).json({ error: "Invalid password" });
-      }
+      if (!match) return res.status(400).json({ error: "Invalid password" });
 
       res.json({
         success: true,
@@ -75,99 +66,10 @@ app.post("/login", (req, res) => {
   );
 });
 
-app.post("/predict-stress", (req, res) => {
-  const inputData = req.body;
+/* ================= PYTHON HELPER ================= */
 
-  const py = spawn("python", ["predict_master.py", JSON.stringify(inputData)]);
-
-  let result = "";
-  let error = "";
-
-  py.stdout.on("data", (data) => result += data.toString());
-  py.stderr.on("data", (data) => error += data.toString());
-
-  py.on("close", (code) => {
-
-    if (code !== 0) {
-      console.error("Python Error:", error);
-      return res.status(500).json({ error: "Master model failed" });
-    }
-
-    try {
-      const output = JSON.parse(result.trim());
-      res.json(output);
-    } catch (err) {
-      console.error("Parse Error:", err);
-      res.status(500).json({ error: "Invalid master model output" });
-    }
-  });
-});
-
-
-/* ===============================
-   DEPRESSION PREDICTION (NEW PAGE)
-================================ */
-app.post("/predict-depression", (req, res) => {
-  const inputData = req.body;
-
-  // ✅ FIXED FILE NAME
-  const py = spawn("python", ["predict_depression.py", JSON.stringify(inputData)]);
-
-  let result = "";
-  let error = "";
-
-  py.stdout.on("data", (data) => result += data.toString());
-  py.stderr.on("data", (data) => error += data.toString());
-
-  py.on("close", (code) => {
-    if (code !== 0) {
-      console.error("Python Error:", error);
-      return res.status(500).json({ error: "Depression model failed" });
-    }
-
-    try {
-      const output = JSON.parse(result);
-
-      const {
-        q1, q2, q3, q4, q5, q6, q7, q8, q9,
-        user_id
-      } = inputData;
-
-      const { prediction, confidence } = output;
-
-      db.query(
-        `INSERT INTO depression_checkins 
-        (user_id, q1_sad, q2_interest, q3_sleep, q4_energy,
-         q5_appetite, q6_guilt, q7_focus, q8_movement, q9_selfharm,
-         prediction, confidence)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          user_id,
-          q1, q2, q3, q4,
-          q5, q6, q7, q8, q9,
-          prediction, confidence
-        ],
-        (err) => {
-          if (err) console.error("Depression DB Error:", err);
-        }
-      );
-
-      res.json(output);
-
-    } catch (err) {
-      console.error("Parse Error:", err);
-      res.status(500).json({ error: "Invalid depression model output" });
-    }
-  });
-});
-app.listen(3000, () => {
-  console.log("🚀 Server running on http://localhost:3000");
-});
-
-app.post("/predict-financial", (req, res) => {
-  const inputData = req.body;
-
-  const py = spawn("python", ["predict_finstress.py", JSON.stringify(inputData)]);
+function runPython(script, inputData, res, errorMsg) {
+  const py = spawn("python", [script, JSON.stringify(inputData)]);
 
   let result = "";
   let error = "";
@@ -178,80 +80,165 @@ app.post("/predict-financial", (req, res) => {
   py.on("close", code => {
     if (code !== 0) {
       console.error(error);
-      return res.status(500).json({ error: "Financial model failed" });
+      return res.status(500).json({ error: errorMsg });
     }
 
     try {
-      res.json(JSON.parse(result));
+      res.json(JSON.parse(result.trim()));
     } catch {
       res.status(500).json({ error: "Invalid output" });
     }
-    
-
-    console.log("Python output:", result);
   });
-});
-app.post("/predict-diet", (req, res) => {
+}
+
+/* ================= DAILY MODEL ================= */
+
+app.post("/predict", (req, res) => {
   const inputData = req.body;
 
-  const py = spawn("python", ["predict_diet.py", JSON.stringify(inputData)]);
+  const py = spawn("python", ["predict.py", JSON.stringify(inputData)]);
 
   let result = "";
-  let error = "";
 
-  py.stdout.on("data", (data) => result += data.toString());
-  py.stderr.on("data", (data) => error += data.toString());
+  py.stdout.on("data", d => result += d.toString());
 
-  py.on("close", (code) => {
-  
-  if (code !== 0) {
-    return res.status(500).json({ error: "Diet model failed" });
-  }
-
-  try {
-    const output = JSON.parse(result.trim());
-    res.json(output);
-  } catch (err) {
-    console.error("PARSE ERROR:", err);
-    res.status(500).json({ error: "Invalid output" });
-  }
-});
-});
-
-app.post("/predict-academic", (req, res) => {
-  const inputData = req.body;
-
-  console.log("🔥 Incoming Academic Input:", inputData);
-
-  const py = spawn("python", ["predict_academic.py", JSON.stringify(inputData)]);
-
-  let result = "";
-  let error = "";
-
-  py.stdout.on("data", (data) => {
-    console.log("🐍 PYTHON STDOUT:", data.toString());
-    result += data.toString();
-  });
-
-  py.stderr.on("data", (data) => {
-    console.log("❌ PYTHON ERROR:", data.toString());
-    error += data.toString();
-  });
-
-  py.on("close", (code) => {
-    console.log("🧠 Python exited with code:", code);
-
-    if (code !== 0) {
-      return res.status(500).json({ error: "Academic model failed" });
-    }
-
+  py.on("close", () => {
     try {
-      console.log("📦 RAW RESULT:", result);
-      const output = JSON.parse(result.trim());
+      const output = JSON.parse(result);
+
+      const {
+        user_id, sleep, work_hours, activity, social, stress_self
+      } = inputData;
+
+      const {
+        prediction, confidence,
+        academic_pressure, study_satisfaction,
+        dietary_habits, financial_stress, depression
+      } = output;
+
+      const fixedConfidence = confidence <= 1 ? confidence * 100 : confidence;
+
+      const sql = `
+        INSERT INTO checkins 
+        (user_id, sleep, work_hours, activity, social, stress_self,
+         prediction, confidence, academic_pressure, study_satisfaction,
+         dietary_habits, financial_stress, depression)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `;
+
+      db.query(sql, [
+        user_id, sleep, work_hours, activity, social, stress_self,
+        prediction, fixedConfidence, academic_pressure, study_satisfaction,
+        dietary_habits, financial_stress, depression
+      ]);
+
       res.json(output);
-    } catch (err) {
-      console.error("❌ Parse Error:", err);
-      res.status(500).json({ error: "Invalid academic output" });
+
+    } catch {
+      res.status(500).json({ error: "Prediction failed" });
     }
   });
+});
+
+/* ================= MODULAR ML ================= */
+
+app.post("/predict-depression", (req, res) =>
+  runPython("predict_depression.py", req.body, res, "Depression failed")
+);
+
+app.post("/predict-financial", (req, res) =>
+  runPython("predict_finstress.py", req.body, res, "Financial failed")
+);
+
+app.post("/predict-diet", (req, res) =>
+  runPython("predict_diet.py", req.body, res, "Diet failed")
+);
+
+app.post("/predict-academic", (req, res) =>
+  runPython("predict_academic.py", req.body, res, "Academic failed")
+);
+
+app.post("/predict-stress", (req, res) =>
+  runPython("predict_master.py", req.body, res, "Master failed")
+);
+
+/* ================= SAVE ALL ================= */
+
+app.post("/save-all", (req, res) => {
+  let {
+    user_id,
+    sleep,
+    activity,
+    social,
+    work_hours,
+    depression,
+    financial_stress,
+    dietary_habits,
+    academic_pressure,
+    prediction,
+    confidence
+  } = req.body;
+
+  const fixedConfidence = confidence <= 1 ? confidence * 100 : confidence;
+
+  const sql = `
+    INSERT INTO checkins 
+    (user_id, sleep, activity, social, work_hours,
+     depression, financial_stress, dietary_habits, academic_pressure,
+     prediction, confidence)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `;
+
+  db.query(sql, [
+    user_id,
+    sleep || 0,
+    activity || 0,
+    social || 0,
+    work_hours || 0,
+    depression,
+    financial_stress,
+    dietary_habits,
+    academic_pressure,
+    prediction,
+    fixedConfidence || 50
+  ], (err) => {
+    if (err) {
+      console.error("❌ SAVE ERROR:", err);
+      return res.status(500).json({ error: "DB insert failed" });
+    }
+    res.json({ success: true });
+  });
+});
+
+/* ================= PROGRESS GRAPH ================= */
+
+app.get("/progress/:userId", (req, res) => {
+  const userId = req.params.userId;
+
+  db.query(
+    `SELECT created_at, confidence 
+     FROM checkins 
+     WHERE user_id = ?
+     ORDER BY created_at ASC`,
+    [userId],
+    (err, results) => {
+      if (err) return res.status(500).json({ error: "Failed" });
+
+      const formatted = results.map(row => ({
+        confidence: row.confidence,
+        date: new Date(row.created_at).toLocaleDateString('en-GB', {
+          day: 'numeric',
+          month: 'short'
+        })
+      }));
+
+      res.json(formatted);
+    }
+  );
+});
+
+/* ================= START ================= */
+
+app.listen(3000, () => {
+  console.log("🚀 Server running on http://localhost:3000");
 });

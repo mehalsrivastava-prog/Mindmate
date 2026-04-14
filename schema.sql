@@ -18,13 +18,11 @@ CREATE TABLE checkins (
     work_hours INT,
     activity FLOAT,
     social INT,
-    stress_self INT,
 
     prediction ENUM('Low', 'Medium', 'High') NOT NULL,
-    confidence INT,
-
-    academic_pressure FLOAT,     
-    study_satisfaction FLOAT,    
+	confidence FLOAT,
+    
+    academic_pressure FLOAT,   
     dietary_habits FLOAT,        
     financial_stress FLOAT,      
     depression FLOAT,            
@@ -35,4 +33,16 @@ CREATE TABLE checkins (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
+select * from users;
+select * from checkins;
+insert into users values (1,"test",'test@gmail.com','1234','2026-04-01 09:00:00');
 
+ALTER TABLE checkins ADD confidence FLOAT;
+
+ALTER TABLE checkins 
+MODIFY depression VARCHAR(20),
+MODIFY dietary_habits VARCHAR(20),
+MODIFY academic_pressure VARCHAR(20);
+
+ALTER TABLE checkins 
+MODIFY prediction VARCHAR(20);

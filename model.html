@@ -537,7 +537,6 @@ async function predictOverall(){
 
   try {
 
-    // 1️⃣ CALL ALL MODELS FIRST
     const [dep, fin, diet, acad] = await Promise.all([
       fetch("http://localhost:3000/predict-depression", {
         method:"POST",
@@ -593,7 +592,6 @@ async function predictOverall(){
       }).then(r=>r.json())
     ]);
 
-    // 2️⃣ SEND TO MASTER MODEL
     const masterRes = await fetch("http://localhost:3000/predict-stress", {
       method:"POST",
       headers:{ "Content-Type":"application/json" },
@@ -607,7 +605,7 @@ async function predictOverall(){
 
     const data = await masterRes.json();
 
-    // 3️⃣ UI UPDATE
+    // UI update (same as yours)
     const level = data.prediction.toLowerCase();
 
     const card = document.getElementById("master-card");
@@ -623,17 +621,24 @@ async function predictOverall(){
 
     document.getElementById("master-result").style.display = "block";
 
-    const tips = document.getElementById("master-tips");
+    // ✅ 🔥 SAVE TO DB (INSIDE TRY)
+    await fetch("http://localhost:3000/save-all", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        user_id: localStorage.getItem("user_id"),
 
-    if(level === "low"){
-      tips.innerText = "You're doing great. Maintain balance.";
-    }
-    else if(level === "moderate"){
-      tips.innerText = "Try improving sleep, diet & time management.";
-    }
-    else{
-      tips.innerText = "High stress detected. Take breaks & seek support.";
-    }
+        depression: dep.prediction,
+        financial_stress: fin.financialStress,
+        dietary_habits: diet.prediction,
+        academic_pressure: acad.level,
+
+        prediction: data.prediction,
+        confidence: data.confidence || 50
+      })
+    });
+
+    console.log("✅ SAVED TO DB");
 
   } catch(err){
     console.error(err);

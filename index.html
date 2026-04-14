@@ -38,7 +38,7 @@
   <div class="grid">
 
     <div class="card grid-left">
-      <div class="card-title">📈 Monthly Progress</div>
+      <div class="card-title">Monthly Progress</div>
       <div class="card-subtitle">Visualizing your wellness trends over time</div>
       <div class="chart-container" style="position: relative; height:250px;">
         <canvas id="progressChart"></canvas>
@@ -94,13 +94,9 @@
 
   </div>
 
-  <footer>
-    <p>&copy; 2026 MindMate Mental Health Dashboard</p>
-  </footer>
 </div>
 
 <script>
-  // 1. Initial UI Setup
   document.addEventListener('DOMContentLoaded', () => {
     const savedName = localStorage.getItem('mindMateUser');
     if (savedName) document.getElementById('display-name').textContent = savedName;
@@ -108,10 +104,9 @@
     document.getElementById('today-date').textContent = 
       new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
     
-    loadChart(); // Load the dynamic graph on start
+    loadChart(); 
   });
 
-  // 2. Mood selector logic
   function selectMood(btn, emoji, label) {
     document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
@@ -168,7 +163,6 @@
     }
   }
 
-  // 4. Save Entry & Trigger ML Prediction
   async function saveAndPredict() {
     const userId = localStorage.getItem('user_id');
     const btn = document.getElementById('save-btn');
@@ -179,7 +173,7 @@
       activity: document.getElementById('activity').value,
       social: document.getElementById('social').value,
       work_hours: document.getElementById('work').value,
-      age: 22 // Fallback or add age input to form
+      age: 22 
     };
 
     btn.disabled = true;
@@ -194,7 +188,7 @@
 
       if (res.ok) {
         alert("Daily metrics saved!");
-        loadChart(); // Refresh the graph immediately with new data
+        loadChart();
       }
     } catch (err) {
       alert("Error saving data.");
@@ -207,7 +201,6 @@
 async function saveDailyAndAssessments() {
     const userId = localStorage.getItem('user_id');
     
-    // 1. Grab values from the Daily Metrics card (from your image)
     const dailyMetrics = {
         sleep: document.getElementById('sleep').value || 0,
         activity: document.getElementById('activity').value || 0,
@@ -216,7 +209,6 @@ async function saveDailyAndAssessments() {
         user_id: userId
     };
 
-    // 2. Combine with your stored assessment scores
     const payload = {
         ...dailyMetrics,
         diet_score: masterData.diet_score,
@@ -225,7 +217,7 @@ async function saveDailyAndAssessments() {
         academic_score: masterData.academic_score
     };
 
-    // 3. Send to the Master endpoint
+    
     const res = await fetch("http://localhost:3000/save-master-checkin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -235,13 +227,13 @@ async function saveDailyAndAssessments() {
     const result = await res.json();
     if (result.success) {
         alert("Dashboard Updated!");
-        loadChart(); // Refresh your progress graph
+        loadChart(); 
     }
 }
 async function saveDailyAndAssessments() {
     const userId = localStorage.getItem('user_id');
     
-    // 1. Grab values from the Daily Metrics card (from your image)
+    
     const dailyMetrics = {
         sleep: document.getElementById('sleep').value || 0,
         activity: document.getElementById('activity').value || 0,
@@ -250,7 +242,7 @@ async function saveDailyAndAssessments() {
         user_id: userId
     };
 
-    // 2. Combine with your stored assessment scores
+    
     const payload = {
         ...dailyMetrics,
         diet_score: masterData.diet_score,
@@ -259,7 +251,7 @@ async function saveDailyAndAssessments() {
         academic_score: masterData.academic_score
     };
 
-    // 3. Send to the Master endpoint
+    
     const res = await fetch("http://localhost:3000/save-master-checkin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -269,7 +261,7 @@ async function saveDailyAndAssessments() {
     const result = await res.json();
     if (result.success) {
         alert("Dashboard Updated!");
-        loadChart(); // Refresh your progress graph
+        loadChart(); 
     }
 }
 </script>

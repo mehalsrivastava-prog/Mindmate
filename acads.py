@@ -1,22 +1,17 @@
 import pandas as pd
 import numpy as np
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import LabelEncoder
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.metrics import mean_absolute_error, r2_score
 import joblib
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_absolute_error, r2_score
+from sklearn.linear_model import LinearRegression
 
+# ---------------- LOAD ----------------
 df = pd.read_csv("academic_stress.csv")
 
-# ---------------- CLEAN COLUMN NAMES ----------------
+# ---------------- CLEAN ----------------
 df.columns = df.columns.str.strip().str.lower()
 
-# ---------------- CLEAN COLUMN NAMES ----------------
-df.columns = df.columns.str.strip().str.lower()
-
-print("Available columns:", df.columns.tolist())
-
-# ---------------- AUTO MAP COLUMNS ----------------
+# ---------------- MAP COLUMNS ----------------
 col_map = {}
 
 for col in df.columns:
@@ -33,15 +28,13 @@ for col in df.columns:
     elif "stress" in col:
         col_map["stress_level"] = col
 
-print("Mapped columns:", col_map)
-
-# ---------------- CREATE CLEAN DATAFRAME ----------------
+# ---------------- CREATE CLEAN DF ----------------
 df_clean = pd.DataFrame()
 
 for new_col, old_col in col_map.items():
     df_clean[new_col] = df[old_col]
 
-# ---------------- CONVERT RANGE → NUMBER ----------------
+# ---------------- CONVERT RANGE ----------------
 def convert_range(val):
     if isinstance(val, str) and "-" in val:
         try:
@@ -55,22 +48,23 @@ def convert_range(val):
         return np.nan
 
 for col in ["academic_competition", "home_pressure", "peer_pressure", "stress_level"]:
-    if col in df_clean.columns:
-        df_clean[col] = df_clean[col].apply(convert_range)
+    df_clean[col] = df_clean[col].apply(convert_range)
 
-# ---------------- ENCODE CATEGORICAL ----------------
-le_coping = LabelEncoder()
-le_env = LabelEncoder()
-
-df_clean["coping_strategy"] = le_coping.fit_transform(df_clean["coping_strategy"].astype(str))
-df_clean["study_environment"] = le_env.fit_transform(df_clean["study_environment"].astype(str))
+# ---------------- ONE HOT ENCODING ----------------
+# Analyze becomes baseline automatically
+df_clean = pd.get_dummies(
+    df_clean,
+    columns=["coping_strategy", "study_environment"],
+    drop_first=True
+)
 
 # ---------------- HANDLE MISSING ----------------
 df_clean.fillna(df_clean.mean(numeric_only=True), inplace=True)
 
-# ---------------- FEATURES & TARGET ----------------
+# ---------------- FEATURES ----------------
 X = df_clean.drop("stress_level", axis=1)
 y = df_clean["stress_level"]
+
 feature_order = X.columns.tolist()
 joblib.dump(feature_order, "feature_order.pkl")
 
@@ -80,24 +74,22 @@ X_train, X_test, y_train, y_test = train_test_split(
 )
 
 # ---------------- MODEL ----------------
-model = RandomForestRegressor(
-    n_estimators=150,
-    max_depth=6,
-    random_state=42
-)
-
+model = LinearRegression()
 model.fit(X_train, y_train)
 
 # ---------------- EVALUATION ----------------
 y_pred = model.predict(X_test)
 
-print("\n📊 Model Performance:")
+print("\n📊 Performance:")
 print("MAE:", mean_absolute_error(y_test, y_pred))
-print("R2 Score:", r2_score(y_test, y_pred))
+print("R2:", r2_score(y_test, y_pred))
+
+# ---------------- FEATURE IMPORTANCE ----------------
+print("\n📊 Feature Importance (Weights):")
+for feature, coef in zip(X.columns, model.coef_):
+    print(feature, ":", round(coef, 3))
 
 # ---------------- SAVE ----------------
 joblib.dump(model, "academic_stress_model.pkl")
-joblib.dump(le_coping, "coping_encoder.pkl")
-joblib.dump(le_env, "env_encoder.pkl")
 
 print("\n✅ Model trained successfully!")

@@ -2,44 +2,44 @@ import numpy as np
 import pandas as pd
 
 np.random.seed(42)
-n = 3000
+n = 4000
 
 data = []
 
 for _ in range(n):
 
-    # ---------------- DIET SCORE (0–1) ----------------
-    diet_score = np.random.beta(2, 2)  # realistic distribution
+    # ---------------- FORCE BALANCED LABEL ----------------
+    rand = np.random.rand()
 
-    # ---------------- DEPRESSION SCORE (0–1) ----------------
-    # worse diet → higher depression
-    depression_score = np.clip(
-        (1 - diet_score) * 0.6 + np.random.normal(0.2, 0.15),
-        0, 1
-    )
+    if rand < 0.33:
+        label = 0   # LOW
 
-    # ---------------- FINANCIAL SCORE (0–1) ----------------
-    financial_score = np.clip(np.random.normal(0.5, 0.2), 0, 1)
+        diet_score = np.random.uniform(0.7, 1.0)
+        depression_score = np.random.uniform(0.0, 0.3)
+        financial_score = np.random.uniform(0.0, 0.4)
+        academic_score = np.random.uniform(0.0, 0.4)
 
-    # ---------------- ACADEMIC SCORE (0–1) ----------------
-    academic_score = np.clip(np.random.normal(0.6, 0.2), 0, 1)
+    elif rand < 0.66:
+        label = 1   # MODERATE
 
-    # ---------------- FINAL STRESS SCORE ----------------
-    final_score = (
-        (1 - diet_score) * 0.25 +
-        depression_score * 0.35 +
-        financial_score * 0.2 +
-        academic_score * 0.2 +
-        np.random.normal(0, 0.05)
-    )
+        diet_score = np.random.uniform(0.3, 0.7)
+        depression_score = np.random.uniform(0.3, 0.7)
+        financial_score = np.random.uniform(0.3, 0.7)
+        academic_score = np.random.uniform(0.3, 0.7)
 
-    # ---------------- LABEL ----------------
-    if final_score < 0.33:
-        label = 0  # Low
-    elif final_score < 0.66:
-        label = 1  # Moderate
     else:
-        label = 2  # High
+        label = 2   # HIGH
+
+        diet_score = np.random.uniform(0.0, 0.4)
+        depression_score = np.random.uniform(0.6, 1.0)
+        financial_score = np.random.uniform(0.6, 1.0)
+        academic_score = np.random.uniform(0.6, 1.0)
+
+    # ---------------- ADD SMALL NOISE (REALISM) ----------------
+    diet_score = np.clip(diet_score + np.random.normal(0, 0.05), 0, 1)
+    depression_score = np.clip(depression_score + np.random.normal(0, 0.05), 0, 1)
+    financial_score = np.clip(financial_score + np.random.normal(0, 0.05), 0, 1)
+    academic_score = np.clip(academic_score + np.random.normal(0, 0.05), 0, 1)
 
     data.append([
         diet_score,
@@ -49,6 +49,7 @@ for _ in range(n):
         label
     ])
 
+# ---------------- CREATE DATAFRAME ----------------
 df = pd.DataFrame(data, columns=[
     "diet_score",
     "depression_score",
@@ -57,8 +58,11 @@ df = pd.DataFrame(data, columns=[
     "target"
 ])
 
+# ---------------- CHECK BALANCE ----------------
+print("\n📊 Class Distribution:")
+print(df["target"].value_counts())
+
+# ---------------- SAVE ----------------
 df.to_csv("master_dataset.csv", index=False)
 
-print("✅ Dataset created")
-print(df.head())
-print(df["target"].value_counts())
+print("\n✅ Balanced dataset generated successfully!")

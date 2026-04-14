@@ -2,16 +2,15 @@ import sys
 import json
 import numpy as np
 import joblib
-import traceback
 
 try:
-    # ---------------- LOAD ----------------
+    # ---------------- LOAD MODEL ----------------
     model = joblib.load("diet_model.pkl")
-    le = joblib.load("diet_encoder.pkl")
 
     # ---------------- INPUT ----------------
     input_data = json.loads(sys.argv[1])
 
+    # ---------------- MAPPING ----------------
     mapping = {
         "Never": 0,
         "Rarely": 1,
@@ -20,12 +19,12 @@ try:
         "Always": 4
     }
 
-    # ---------------- EXTRACT ----------------
+    # ---------------- EXTRACT FEATURES ----------------
     meals = float(input_data.get("meals", 0))
     junk_freq = float(input_data.get("junk_freq", 0))
-    fruits = mapping.get(input_data.get("fruits"), 0)
-    vegetables = mapping.get(input_data.get("vegetables"), 0)
-    fried = mapping.get(input_data.get("fried"), 0)
+    fruits = mapping.get(input_data.get("fruits"), 2)
+    vegetables = mapping.get(input_data.get("vegetables"), 2)
+    fried = mapping.get(input_data.get("fried"), 2)
     water = float(input_data.get("water", 0))
     BMI = float(input_data.get("BMI", 0))
     sleep = float(input_data.get("sleep", 0))
@@ -40,14 +39,22 @@ try:
 
     # ---------------- PREDICT ----------------
     pred = model.predict(input_array)[0]
-    label = le.inverse_transform([pred])[0]
 
-    # ---------------- OUTPUT ----------------
-    result = {
-        "prediction": label
+    # ---------------- MAP LABEL ----------------
+    label_map = {
+        0: "Unhealthy",
+        1: "Moderate",
+        2: "Healthy"
     }
 
-    print(json.dumps(result))
+    label = label_map.get(pred, "Moderate")
 
-except Exception:
-    print(traceback.format_exc())
+    # ---------------- OUTPUT ----------------
+    print(json.dumps({
+        "prediction": label
+    }))
+
+except Exception as e:
+    print(json.dumps({
+        "error": str(e)
+    }))
